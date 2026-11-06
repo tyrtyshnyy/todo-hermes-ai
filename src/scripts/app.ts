@@ -1,6 +1,7 @@
 import type {User} from '@supabase/supabase-js';
 import {createTask, filterTasks, parseTasks, projects, type Task} from '../lib/state';
-import {supabase} from '../lib/supabase';
+import {supabase, supabaseUrl, supabasePublishableKey} from '../lib/supabase';
+import {usernameCredentials} from '../lib/username';
 import {cloudTask, cloudInput, cloudError, decodeCloudPage, displayName, type CloudTask} from '../lib/cloud';
 
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -98,13 +99,12 @@ window.addEventListener('focus', () => { if (scope !== 'local' && !busy && !load
 
 function openAuth() {
  menu(false); authForm.reset(); setAuthMode('login'); authDialog.showModal();
- (authForm.elements.namedItem('email') as HTMLInputElement).focus();
+ (authForm.elements.namedItem('username') as HTMLInputElement).focus();
 }
 function setAuthMode(mode: string) {
  if (authBusy) return;
  authMode = mode; $('#auth-message').textContent = '';
- $('#auth-name-label').hidden = mode !== 'signup';
- (authForm.elements.namedItem('display_name') as HTMLInputElement).required = mode === 'signup';
+
  const password = authForm.elements.namedItem('password') as HTMLInputElement;
  password.autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
  $('#auth-title').textContent = mode === 'signup' ? 'Место для ваших планов.' : 'С возвращением.';
@@ -122,9 +122,16 @@ authForm.addEventListener('submit', async event => {
  document.querySelectorAll<HTMLButtonElement>('[data-auth-mode]').forEach(el => el.disabled = true);
  $('#auth-message').textContent = authMode === 'signup' ? 'Создаём аккаунт…' : 'Входим…';
  try {
-  const credentials = {email: String(data.get('email')).trim(), password: String(data.get('password'))};
+  const {username, email} = usernameCredentials(data.get('username'));
+  const credentials = {email, password: String(data.get('password'))};
+  if (authMode === 'signup') {
+   const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {headers:{apikey:supabasePublishableKey}, signal:AbortSignal.timeout(12000)});
+   if (!response.ok) throw new Error('Не удалось проверить настройки регистрации. Попробуйте позже.');
+   const settings = await response.json();
+   if (settings.mailer_autoconfirm !== true) throw new Error('Регистрация без почты ещё не включена: в Supabase отключите Confirm email (Authentication → Sign In / Providers → Email). Письма не отправлялись.');
+  }
   const result = authMode === 'signup'
-   ? await supabase.auth.signUp({...credentials, options:{data:{display_name:displayName(data.get('display_name'))},emailRedirectTo:new URL(import.meta.env.BASE_URL, location.origin).href}})
+   ? await supabase.auth.signUp({...credentials, options:{data:{display_name:username, username}}})
    : await supabase.auth.signInWithPassword(credentials);
   if (result.error) throw result.error;
   (authForm.elements.namedItem('password') as HTMLInputElement).value = '';
@@ -132,7 +139,7 @@ authForm.addEventListener('submit', async event => {
    applyUser(result.data.session.user); authDialog.close();
    if (scope === 'local') switchScope('mine'); else void loadCloud();
   } else {
-   $('#auth-message').textContent = 'Если регистрация доступна для этого адреса, письмо подтверждения отправлено. Проверьте почту и спам, затем вернитесь и войдите.';
+   $('#auth-message').textContent = 'Не удалось начать сеанс. Логин может быть занят. В Supabase должно быть отключено Confirm email; письмо не требуется.';
   }
  } catch (error) {
   $('#auth-message').textContent = error instanceof Error ? error.message : 'Не удалось войти. Попробуйте ещё раз.';

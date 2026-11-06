@@ -30,7 +30,7 @@ async function setup(page:Page){
 async function login(page:Page){
  await page.goto('/',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Мои задачи',exact:true}).click();
  await page.getByRole('button',{name:'Войти в аккаунт',exact:true}).click();
- await page.getByLabel('Email',{exact:true}).fill('anna@example.test');await page.getByLabel('Пароль',{exact:true}).fill('fixture-password-only');
+ await page.getByLabel('Логин',{exact:true}).fill('anna_test');await page.getByLabel('Пароль',{exact:true}).fill('fixture-password-only');
  await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByText(row.title,{exact:true})).toBeVisible();
 }
 test('cloud task can be published, completed, restored and deleted',async({page})=>{

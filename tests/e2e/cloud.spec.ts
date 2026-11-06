@@ -58,7 +58,7 @@ test('sign-in opens own cloud space and new tasks stay private',async({page})=>{
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Мои задачи',exact:true}).click();
  await page.getByRole('button',{name:'Войти в аккаунт',exact:true}).click();
- await page.getByLabel('Email',{exact:true}).fill('anna@example.test');
+ await page.getByLabel('Логин',{exact:true}).fill('anna_test');
  await page.getByLabel('Пароль',{exact:true}).fill('fixture-password-only');
  await page.getByRole('button',{name:'Войти',exact:true}).click();
  await expect(page.getByText('Личное дело',{exact:true})).toBeVisible();
@@ -70,23 +70,43 @@ test('sign-in opens own cloud space and new tasks stay private',async({page})=>{
  await expect.poll(()=>posted?.user_id).toBe(uid);
  await expect(page.getByText('Секретный план',{exact:true})).toBeVisible();
 });
-test('signup requests email confirmation and sends a Pages-compatible redirect',async({page})=>{
+test('signup uses only login/password and immediately starts session without email',async({page})=>{
  let signup:any;
  await page.route('https://hrwlrzbjusplfxwkrend.supabase.co/**',async route=>{
-  if(route.request().url().includes('/auth/v1/signup')){signup={url:route.request().url(),body:route.request().postDataJSON()};return route.fulfill({json:{user:{id:uid},session:null}});}
+  if(route.request().url().includes('/auth/v1/settings'))return route.fulfill({json:{mailer_autoconfirm:true}});
+  if(route.request().url().includes('/auth/v1/signup')){signup={url:route.request().url(),body:route.request().postDataJSON()};const user={id:uid,aud:'authenticated',role:'authenticated',email:'anna_test@users.tikho.invalid',user_metadata:{display_name:'anna_test',username:'anna_test'}};return route.fulfill({json:{access_token:[btoa('{}'),btoa(JSON.stringify({sub:uid,exp:4102444800})),'fixture'].join('.'),refresh_token:'fixture-refresh',token_type:'bearer',expires_in:3600,user}});}
+  if(route.request().url().includes('/rest/v1/todos'))return route.fulfill({json:[]});
   return route.fulfill({json:{}});
  });
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Войти в аккаунт',exact:true}).click();
  await page.getByRole('button',{name:'Регистрация',exact:true}).click();
- await page.getByLabel('Публичное имя',{exact:true}).fill('Анна');
- await page.getByLabel('Email',{exact:true}).fill('anna@example.test');
+ await page.getByLabel('Логин',{exact:true}).fill('anna_test');
  await page.getByLabel('Пароль',{exact:true}).fill('fixture-password-only');
  await page.getByRole('button',{name:'Создать аккаунт',exact:true}).click();
- await expect(page.locator('#auth-message')).toContainText('письмо подтверждения');
- expect(signup.body.data.display_name).toBe('Анна');
- expect(new URL(signup.url).searchParams.get('redirect_to')).toBe('http://127.0.0.1:4322/');
- await expect(page.getByLabel('Пароль',{exact:true})).toHaveValue('');
+ await expect(page.locator('#auth-dialog')).not.toBeVisible();
+ await expect(page.getByRole('heading',{name:'Мои задачи',exact:true})).toBeVisible();
+ expect(signup.body.email).toBe('anna_test@users.tikho.invalid');
+ expect(signup.body.data.display_name).toBe('anna_test');
+ expect(signup.body.data.username).toBe('anna_test');
+ expect(new URL(signup.url).searchParams.has('redirect_to')).toBe(false);
+ await expect(page.locator('input[type=email]')).toHaveCount(0);
+});
+test('signup refuses to send a request when email confirmation is still enabled',async({page})=>{
+ let signupCalls=0;
+ await page.route('https://hrwlrzbjusplfxwkrend.supabase.co/**',async route=>{
+  if(route.request().url().includes('/auth/v1/settings'))return route.fulfill({json:{mailer_autoconfirm:false}});
+  if(route.request().url().includes('/auth/v1/signup'))signupCalls++;
+  return route.fulfill({json:{}});
+ });
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.getByRole('button',{name:'Войти в аккаунт',exact:true}).click();
+ await page.getByRole('button',{name:'Регистрация',exact:true}).click();
+ await page.getByLabel('Логин',{exact:true}).fill('anna_test');
+ await page.getByLabel('Пароль',{exact:true}).fill('fixture-password-only');
+ await page.getByRole('button',{name:'Создать аккаунт',exact:true}).click();
+ await expect(page.locator('#auth-message')).toContainText('отключите Confirm email');
+ expect(signupCalls).toBe(0);
 });
 test('late public feed response cannot leak into local scope',async({page})=>{
  let release:()=>void=()=>{};
