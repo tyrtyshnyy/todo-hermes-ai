@@ -1,0 +1,25 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Local dependencies and caches
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build output and OS files
+dist/
+build/
+.DS_Store
+Thumbs.db
+.astro/
+.cache/
+test-results/
+playwright-report/

@@ -1,0 +1,20 @@
+import {test,expect} from '@playwright/test';
+test('desktop and mobile visual smoke',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');
+ await page.getByRole('button',{name:/Или посмотреть на примере/}).click();
+ await expect(page.locator('.task-row')).toHaveCount(3);
+ await page.screenshot({path:'.cache/tikho-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:'Переключить тему'}).click();
+ await page.screenshot({path:'.cache/tikho-dark.png',fullPage:true});
+ await page.getByRole('button',{name:'Переключить тему'}).click();
+ await page.setViewportSize({width:390,height:844});
+ await expect.poll(async()=>await page.locator('#sidebar').evaluate(el=>el.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
+ await page.getByRole('button',{name:'Скрыть уведомление'}).click();
+ await page.screenshot({path:'.cache/tikho-mobile.png',fullPage:true,animations:'disabled'});
+ await page.getByRole('button',{name:'Добавить новую задачу'}).click();
+ await page.getByLabel('Название задачи').fill('Мобильная задача');
+ await page.getByRole('button',{name:'Добавить задачу',exact:true}).click();
+ await expect(page.getByText('Мобильная задача',{exact:true})).toBeVisible();
+ expect(errors).toEqual([]);
+});
