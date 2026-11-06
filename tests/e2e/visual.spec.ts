@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 test('desktop and mobile visual smoke',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/');
+ await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:/Или посмотреть на примере/}).click();
  await expect(page.locator('.task-row')).toHaveCount(3);
  await page.screenshot({path:'.cache/tikho-desktop.png',fullPage:true});

@@ -1,15 +1,15 @@
 import {test,expect} from '@playwright/test';
 test('первая задача сохраняется после перезагрузки',async({page})=>{
- await page.goto('/');
+ await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Новая задача',exact:true}).click();
  await page.getByLabel('Название задачи').fill('Подготовить письмо');
  await page.getByRole('button',{name:'Добавить задачу',exact:true}).click();
  await expect(page.getByText('Подготовить письмо',{exact:true})).toBeVisible();
- await page.reload();
+ await page.reload({waitUntil:'domcontentloaded'});
  await expect(page.getByText('Подготовить письмо',{exact:true})).toBeVisible();
 });
 test('редактирование, поиск, выполнение и удаление',async({page})=>{
- await page.goto('/');
+ await page.goto('/',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Новая задача',exact:true}).click();
  await page.getByLabel('Название задачи').fill('Проверить макет');
  await page.getByLabel('Проект',{exact:true}).selectOption('Работа');
@@ -31,7 +31,7 @@ test('редактирование, поиск, выполнение и удал
 });
 test('мобильный экран не имеет горизонтального скролла',async({page})=>{
  await page.setViewportSize({width:390,height:844});
- await page.goto('/');
+ await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect(page.getByRole('heading',{name:'Все задачи',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('button',{name:'Открыть меню'}).click();

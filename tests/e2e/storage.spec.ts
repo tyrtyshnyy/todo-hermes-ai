@@ -13,7 +13,7 @@ async function blockTaskStorage(page:Page){
 
 test.describe('storage',()=>{
  test('demo retains the save failure warning',async({page})=>{
-  await page.goto('/');
+  await page.goto('/',{waitUntil:'domcontentloaded'});
   await blockTaskStorage(page);
   await page.locator('#demo').click();
   await expect(page.locator('.task-row')).toHaveCount(3);
@@ -22,7 +22,7 @@ test.describe('storage',()=>{
  });
 
  test('failed delete retains the warning and allows undo',async({page})=>{
-  await page.goto('/');
+  await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.locator('#demo').click();
   const title=await page.locator('.task-title').first().innerText();
   await blockTaskStorage(page);
@@ -35,7 +35,7 @@ test.describe('storage',()=>{
  });
 
  test('failed undo retains the save failure warning',async({page})=>{
-  await page.goto('/');
+  await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.locator('#demo').click();
   const title=await page.locator('.task-title').first().innerText();
   await page.getByRole('button',{name:`Удалить: ${title}`,exact:true}).click();
@@ -48,7 +48,7 @@ test.describe('storage',()=>{
  });
 
  test('successful demo delete and undo keep their default notifications',async({page})=>{
-  await page.goto('/');
+  await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.locator('#demo').click();
   await expect(page.locator('#notification-text')).toHaveText('Добавлены 4 примера. Их можно изменить или удалить.');
   const title=await page.locator('.task-title').first().innerText();
@@ -57,7 +57,7 @@ test.describe('storage',()=>{
   await expect(page.locator('#undo')).toBeVisible();
   await page.locator('#undo').click();
   await expect(page.locator('#notification')).toBeHidden();
-  await page.reload();
+  await page.reload({waitUntil:'domcontentloaded'});
   await expect(page.getByText(title,{exact:true})).toBeVisible();
   await expect(page.locator('.task-row')).toHaveCount(3);
  });

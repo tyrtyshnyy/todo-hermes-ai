@@ -5,7 +5,7 @@
 - Корень проекта: /root/projects/todo-hermes-ai.
 - GitHub: https://github.com/tyrtyshnyy/todo-hermes-ai (публичный репозиторий).
 - Работай с файлами этого проекта внутри его корня. Не изменяй другие проекты или настройки сервера без отдельного запроса.
-- Стек: Astro, TypeScript, CSS; данные — localStorage. Код — в main, GitHub Pages публикуется из gh-pages (корень /). Для Pages сборки нужно GITHUB_ACTIONS=true; автодеплой пока не включён. Не добавляй backend и внешние сервисы без согласования.
+- Стек: Astro, TypeScript, CSS; данные — localStorage (локальный режим) и Supabase PostgreSQL/Auth (облачный режим). Код — в main, GitHub Pages публикуется из gh-pages (корень /). Для Pages сборки нужно GITHUB_ACTIONS=true; автодеплой пока не включён. Не добавляй backend и внешние сервисы без согласования.
 
 ## Безопасность и Git
 
